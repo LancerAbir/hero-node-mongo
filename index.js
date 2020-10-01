@@ -1,7 +1,7 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient;
 const MongoObjectId = require('mongodb').ObjectId
-const bodeParser = require('body-parser')
+const bodyParser = require('body-parser')
 
 
 //** Mongo URI */
@@ -18,6 +18,7 @@ const middleware = [
     express.static('public'),
     express.urlencoded({ extended: true }),
     express.json(),
+    bodyParser.json()
 ]
 app.use(middleware)
 
@@ -55,7 +56,28 @@ client.connect(err => {
 
     //** UPDATE --> Single Product Update */
     app.get('/product/:id', (req, res) => {
-        productCollections.find()
+        productCollections.find({ _id: MongoObjectId(req.params.id) })
+            .toArray((error, documents) => {
+                res.send(documents[0])
+            })
+    })
+
+
+    //** UPDATE Submit  */
+    app.patch('/update/:id', (req, res) => {
+        productCollections.updateOne(
+            { _id: MongoObjectId(req.params.id) },
+            {
+                $set:
+                {
+                    productName: req.body.productName,
+                    price: req.body.price,
+                    quantity: req.body.quantity
+                }
+            })
+            .then(result => {
+                res.send(result.modifiedCount > 0)
+            })
     })
 
 
@@ -65,20 +87,19 @@ client.connect(err => {
         const product = req.body
         console.log(product);
         productCollections.insertOne(product)
-            .then(res => {
+            .then(result => {
                 console.log('Product Added');
+                res.redirect('/addProduct')
             })
     })
+
 
     //** DELETE --> Product Delete */
     app.delete('/delete/:id', (req, res) => {
         console.log(req.params.id);
-        productCollections.deleteOne({
-            _id: MongoObjectId(req.params.id)
-        })
-            .then(res => {
-                // res.deletedCount
-                console.log('Product Delete', res);
+        productCollections.deleteOne({ _id: MongoObjectId(req.params.id) })
+            .then(result => {
+                res.send(result.deletedCount > 0)
             })
     })
 

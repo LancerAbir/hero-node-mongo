@@ -27,14 +27,18 @@
 
     </div>
 
+    <div id="singleUpdate">
+
+    </div>
+
     <!-- Optional JavaScript -->
     <script>
         const loadAllProduct = () => {
             fetch('/product')
                 .then(res => res.json())
                 .then(data => {
-                    console.log(data)
                     const container = document.getElementById('allProduct')
+                    container.innerHTML = ''
                     data.forEach(element => {
                         const p = document.createElement('p')
                         p.innerHTML = `
@@ -43,7 +47,7 @@
                     Quantity: <strong>${element.quantity}</strong>
                     
                     <button onclick="updateLoadProduct('${element._id}')" class="btn, btn-primary">Update</button>
-                    <button onclick="deleteProduct('${element._id}')"  class="btn, btn-danger">Delete</button>
+                    <button onclick="deleteProduct(event, '${element._id}')"  class="btn, btn-danger">Delete</button>
                     `
                         container.appendChild(p)
                     });
@@ -51,20 +55,54 @@
         }
 
 
-        const deleteProduct = (id) => {
+        //** Delete Handler **// 
+        const deleteProduct = (event, id) => {
             fetch(`/delete/${id}`, {
                 method: 'DELETE'
             })
                 .then(res => res.json())
-                .then(data => console.log('Delete Data Successfully', data))
+                .then(data => {
+                    if (data) {
+                        event.target.parentNode.style.display = 'none'
+                    }
+                })
         }
 
 
+        //** Update Handler **// 
         const updateLoadProduct = (id) => {
             fetch(`/product/${id}`)
                 .then(res => res.json())
                 .then(data => {
-                    console.log(data)
+                    const updateContainer = document.getElementById('singleUpdate')
+                    updateContainer.innerHTML = `
+                        <h5> Updated Id is ${data._id} </h5>
+                        <input type="text" value="${data.productName}" placeholder="product Name" name="productName" id="proName">
+                        <input type="text" value="${data.price}" placeholder="price" name="price" id="price">
+                        <input type="text" value="${data.quantity}" placeholder="quantity" name="quantity" id="quantity">
+                        <button onclick="updateSubmitProduct('${data._id}')" type="submit">Update Submit</button>
+                    `
+                })
+        }
+
+        //** Update Submit Handler **// 
+        const updateSubmitProduct = (id) => {
+            const productName = document.getElementById('proName').value
+            const price = document.getElementById('price').value
+            const quantity = document.getElementById('quantity').value
+            const product = { id, productName, price, quantity }
+
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+
+            })
+                .then(res => res.json())
+                .then(element => {
+                    if (element) {
+                        loadAllProduct()
+                    }
                 })
         }
 
